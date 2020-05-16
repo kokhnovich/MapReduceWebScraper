@@ -6,5 +6,8 @@ link = sys.argv[1]
 req = get(link)
 parser = BeautifulSoup(req.text, 'lxml')
 for link in parser.find_all('a', href=True):
-    if link['href'][0] != '#':
+    if link['href'][0] == '#' or len((link['href'])) <= 2: continue
+    if link['href'][:2] == '//':
+        print("https:" + link['href'])
+    else:
         print(link['href'])
