@@ -1,5 +1,7 @@
 #include <bits/stdc++.h>
 
+#include <utility>
+
 // #define int long long
 #define ll long long
 
@@ -9,7 +11,25 @@ const int BLOCK = 3;
 const string INPUT = "input.bin";
 const string OUTPUT = "output.bin";
 const string TEMP = "tmp.bin";
-const int line_size = 4;
+const int line_size = 6;
+
+void FillBinFile() {
+  FILE* in = fopen(INPUT.c_str(), "wb+");
+  ll n = 10;
+  vector<string> a(n);
+  for (int i = 0; i < n; ++i) {
+    a[i] = string(line_size, 'k');
+    a[i][0] = (char) ('9' - i);
+    cout << a[i] << " ";
+  }
+  cout << endl;
+
+  fwrite(&n, sizeof(n), 1, in);
+  for (auto& i : a) {
+    fwrite(i.c_str(), 1, i.size(), in);
+  }
+  fclose(in);
+}
 
 void Check(const string& file_to_check) {
   cout << "checking " << file_to_check << endl;
@@ -32,48 +52,28 @@ void Check(const string& file_to_check) {
   cout << endl;
 }
 
-void FillBinFile() {
-  FILE* in = fopen(INPUT.c_str(), "wb+");
-  ll n = 10;
-  vector<string> a(n);
-  for (int i = 0; i < n; ++i) {
-    a[i] = string(line_size, 'k');
-    a[i][0] = (char) ('9' - i);
-    cout << a[i] << " ";
+vector<string> ReadSubrray(FILE* file, int start, int count) {
+  vector<string> ans(count, string(line_size, 0));
+  fseek(file, sizeof(ll) + start * line_size, SEEK_SET);
+  //fread(&ans[0], line_size, count, file);
+  for (auto& i : ans) {
+    fread(&i[0], line_size, 1, file);
   }
-  cout << endl;
-
-  fwrite(&n, sizeof(n), 1, in);
-  for (auto& i : a) {
-    fwrite(i.c_str(), 1, i.size(), in);
-  }
-  fclose(in);
-}
-
-void ReadSubrray(FILE* file, int start, int count, ll* block_) {
-  //ll a[count];
-  fseek(file, 8 + start * 8, SEEK_SET);
-  fread(block_, sizeof(ll), count, file);
-  //vector<ll> arr(count);
-  //for (int i = 0; i < count; ++i) {
-  //  arr[i] = a[i];
-  //}
-  // assert(arr.size() == count);
-  // return arr;
+  return ans;
 }
 
 class CacheManager {
  public:
   explicit CacheManager(FILE* temp) : tmp(temp), cache_(BLOCK) {}
 
-  void AddElement(ll num) {
+  void AddElement(string element) {
     if (size_ == max_size_) {
       Write();
     }
-    cache_[size_++] = num;
+    cache_[size_++] = std::move(element);
   }
   void Write() {
-    fseek(tmp, BLOCK * 8 * number_of_blocks_inside_tmp, SEEK_SET);
+    fseek(tmp, BLOCK * line_size * number_of_blocks_inside_tmp, SEEK_SET);
     //ll arr[size_];
 
     //cout << "test" << number_of_blocks_inside_tmp << endl;
@@ -83,7 +83,10 @@ class CacheManager {
     //}
     //cout << endl;
 
-    fwrite(&cache_[0], sizeof(ll), size_, tmp);
+    // fwrite(&cache_[0], line_size, size_, tmp);
+    for (int i = 0; i < size_; ++i) {
+      fwrite(&cache_[i][0], 1, line_size, tmp);
+    }
     ++number_of_blocks_inside_tmp;
     size_ = 0;
   }
@@ -92,24 +95,34 @@ class CacheManager {
     // Write();
     // assert(number_of_blocks_inside_tmp*BLOCK+cache_.size() == expected_length);
     fseek(tmp, 0, SEEK_SET);
-    fseek(file, 8 + start * 8, SEEK_SET);
+    fseek(file, 8 + start * line_size, SEEK_SET);
     for (int i = 0; i < number_of_blocks_inside_tmp; ++i) {
-      ll temp[BLOCK];
-      fread(temp, sizeof(ll), BLOCK, tmp);
-      fwrite(temp, sizeof(ll), BLOCK, file);
+      //ll temp[BLOCK];
+      //fread(temp, line_size, BLOCK, tmp);
+      //fwrite(temp, line_size, BLOCK, file);
+      vector<string> temp(BLOCK, string(line_size, 0));
+      for (auto& elem : temp) {
+        fread(&elem[0], 1, line_size, tmp);
+      }
+      for (auto& elem : temp) {
+        fwrite(elem.c_str(), 1, elem.size(), file);
+      }
     }
     //ll arr[cache_.size()];
     //for (int i = 0; i < cache_.size(); ++i) {
     //  arr[i] = cache_[i];
     //}
-    fwrite(&cache_[0], sizeof(ll), size_, file);
+    //fwrite(&cache_[0], line_size, size_, file);
+    for (int i = 0; i < size_; ++i) {
+      fwrite(&cache_[i][0], 1, line_size, file);
+    }
     fseek(file, 8, SEEK_SET);
     fseek(tmp, 0, SEEK_SET);
   }
  private:
   FILE* tmp;
   int number_of_blocks_inside_tmp = 0;
-  vector<ll> cache_;
+  vector<string> cache_;
   int size_ = 0;
   int max_size_ = BLOCK;
 };
@@ -119,7 +132,8 @@ class StorageManager {
   StorageManager(FILE* file, int start_index, int sz) : start_index_(start_index),
                                                         number_of_elements_(sz),
                                                         current_index_(0),
-                                                        file_(file) {
+                                                        file_(file),
+                                                        block_(BLOCK) {
     UpdateChunk();
   }
 
@@ -127,14 +141,14 @@ class StorageManager {
     return current_index_ == number_of_elements_;
   }
 
-  [[nodiscard]] ll SeeNextElement() const {
+  [[nodiscard]] string SeeNextElement() const {
     assert(!HasReachedEnd());
     return block_[current_index_ % BLOCK];
   }
 
-  ll GetNextElement() {
+  string GetNextElement() {
     assert(!HasReachedEnd());
-    ll to_return = SeeNextElement();
+    string to_return = SeeNextElement();
     ++current_index_;
     if (current_index_ % BLOCK == 0) {
       UpdateChunk();
@@ -145,11 +159,10 @@ class StorageManager {
  private:
   void UpdateChunk() {
     if (number_of_elements_ - current_index_ == 0) return;
-    ReadSubrray(file_, start_index_ + current_index_, min(BLOCK, number_of_elements_ - current_index_), block_);
-    return;
+    block_ = ReadSubrray(file_, start_index_ + current_index_, min(BLOCK, number_of_elements_ - current_index_));
   }
 
-  ll block_[BLOCK];
+  vector<string> block_;
   FILE* file_;
   int start_index_;
   int number_of_elements_;
@@ -201,10 +214,16 @@ void Solve() {
 
   for (int i = 0; i < n; i += BLOCK) {
     int len = min(BLOCK, n - i);
-    ll a[len];
-    fread(a, sizeof(ll), len, in);
-    sort(a, a + len);
-    fwrite(a, sizeof(ll), len, out);
+    vector<string> a(len, string(line_size, 0));
+    //fread(a, line_size, len, in);
+    for (auto& elem : a) {
+      fread(&elem[0], 1, line_size, in);
+    }
+    sort(a.begin(), a.end());
+    //fwrite(a, line_size, len, out);
+    for (auto& elem : a) {
+      fwrite(elem.c_str(), 1, elem.size(), out);
+    }
   }
 
   int cnt_blocks = (n + BLOCK - 1) / BLOCK;
@@ -215,6 +234,7 @@ void Solve() {
 
 int32_t main() {
   FillBinFile();
+  //Check(OUTPUT);
   Solve();
   Check(INPUT);
   Check(OUTPUT);
