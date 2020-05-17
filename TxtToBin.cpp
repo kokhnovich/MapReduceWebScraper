@@ -2,6 +2,8 @@
 #include <fstream>
 #include <cassert>
 
+#include "constants.h"
+
 // @TODO format to Key\tValue
 
 int main(int argc, char** argv) {
@@ -15,16 +17,16 @@ int main(int argc, char** argv) {
 
   std::ifstream fin(input_file);
   FILE* out = fopen(output_file.c_str(), "wb+");
-  long long number_of_lines, max_length;
-  fin >> number_of_lines >> max_length;
+  long long number_of_lines;
+  fin >> number_of_lines;
   fin.ignore();
   fwrite(&number_of_lines, sizeof(long long), 1, out);
   while (number_of_lines--) {
     std::string line;
     getline(fin, line);
-    assert(line.size() <= max_length);
-    line = std::string(max_length - line.length(), ' ').append(line);
-    assert(line.size() == max_length);
-    fwrite(&line[0], 1, max_length, out);
+    assert(line.size() <= MAX_LINK_LENGTH);
+    line = std::string(MAX_LINK_LENGTH - line.length(), ' ').append(line);
+    assert(line.size() == MAX_LINK_LENGTH);
+    fwrite(&line[0], 1, MAX_LINK_LENGTH, out);
   }
 }
