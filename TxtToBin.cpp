@@ -17,15 +17,10 @@ int main(int argc, char** argv) {
 
   std::ifstream fin(input_file);
   FILE* out = fopen(output_file.c_str(), "wb+");
-  long long number_of_lines;
-  fin >> number_of_lines;
-  fin.ignore();
-  fwrite(&number_of_lines, sizeof(long long), 1, out);
-  while (number_of_lines--) {
-    std::string line;
-    getline(fin, line);
-    assert(line.size() <= MAX_LINK_LENGTH);
-    line = std::string(MAX_LINK_LENGTH - line.length(), ' ').append(line);
+  std::string line;
+  while (getline(fin, line)) {
+    assert(line.size() <= MAX_LINK_LENGTH && !line.empty());
+    line.append(std::string(MAX_LINK_LENGTH - line.size(), ' '));
     assert(line.size() == MAX_LINK_LENGTH);
     fwrite(&line[0], 1, MAX_LINK_LENGTH, out);
   }

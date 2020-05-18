@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <filesystem>
 
 #include "constants.h"
 
@@ -17,13 +18,12 @@ int main(int argc, char** argv) {
 
   FILE* in = fopen(input_file.c_str(), "rb");
   std::ofstream fout(output_file);
-
-  long long number_of_lines;
-  fread(&number_of_lines, sizeof(long long), 1, in);
-  fout << number_of_lines << std::endl;
-  while (number_of_lines--) {
+  int n = std::filesystem::file_size(input_file) / MAX_LINK_LENGTH;
+  while (n--) {
     std::string line(MAX_LINK_LENGTH, 0);
     fread(&line[0], 1, MAX_LINK_LENGTH, in);
+    auto first_space = line.find_first_of(' ');
+    line = line.substr(0, first_space);
     fout << line << std::endl;
   }
 }
