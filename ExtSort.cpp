@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const int BLOCK = 30;
+const int BLOCK = 20;
 string INPUT;
 string OUTPUT;
 const string TEMP = "tmp.bin";
@@ -55,7 +55,7 @@ void Check(const string& file_to_check) {
 
 vector<string> ReadSubrray(FILE* file, int start, int count) {
   vector<string> ans(count, string(line_size, 0));
-  fseek(file, sizeof(ll) + start * line_size, SEEK_SET);
+  fseek(file, start * line_size, SEEK_SET);
   for (auto& i : ans) {
     fread(&i[0], line_size, 1, file);
   }
@@ -83,7 +83,7 @@ class CacheManager {
   /// The class isn't usable after this function.
   void CopyToFile(FILE* file, int start, int expected_length) {
     fseek(tmp, 0, SEEK_SET);
-    fseek(file, 8 + start * line_size, SEEK_SET);
+    fseek(file, start * line_size, SEEK_SET);
     for (int i = 0; i < number_of_blocks_inside_tmp; ++i) {
       vector<string> temp(BLOCK, string(line_size, 0));
       for (auto& elem : temp) {
@@ -96,7 +96,7 @@ class CacheManager {
     for (int i = 0; i < size_; ++i) {
       fwrite(&cache_[i][0], 1, line_size, file);
     }
-    fseek(file, 8, SEEK_SET);
+    fseek(file, 0, SEEK_SET);
     fseek(tmp, 0, SEEK_SET);
   }
  private:
@@ -183,12 +183,13 @@ void Solve() {
   FILE* out = fopen(OUTPUT.c_str(), "wb+");
   FILE* tmp = fopen(TEMP.c_str(), "wb+");
 
-  int n;
-  fread(&n, sizeof(ll), 1, in);
-  fwrite(&n, sizeof(ll), 1, out);
+  long long n = std::filesystem::file_size(INPUT) / MAX_LINK_LENGTH;
+  std::cout << "file_size=" << std::filesystem::file_size(INPUT) << std::endl;
+  std::cout << "n=" << n << std::endl;
+  std::cout << "max_len=" << MAX_LINK_LENGTH << std::endl;
 
   for (int i = 0; i < n; i += BLOCK) {
-    int len = min(BLOCK, n - i);
+    int len = min(BLOCK, (int) n - i);
     vector<string> a(len, string(line_size, 0));
     for (auto& elem : a) {
       fread(&elem[0], 1, line_size, in);
@@ -214,7 +215,7 @@ int32_t main(int argc, char** argv) {
   INPUT = argv[1];
   OUTPUT = argv[2];
   Solve();
-  Check(INPUT);
-  Check(OUTPUT);
+  //Check(INPUT);
+  //Check(OUTPUT);
   return 0;
 }
