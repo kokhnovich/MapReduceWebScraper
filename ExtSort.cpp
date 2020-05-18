@@ -2,16 +2,17 @@
 
 #include <utility>
 
-// #define int long long
+#include "constants.h"
+
 #define ll long long
 
 using namespace std;
 
-const int BLOCK = 3;
+const int BLOCK = 30;
 const string INPUT = "input.bin";
 const string OUTPUT = "output.bin";
 const string TEMP = "tmp.bin";
-const int line_size = 6;
+const int line_size = MAX_LINK_LENGTH;
 
 void FillBinFile() {
   FILE* in = fopen(INPUT.c_str(), "wb+");
@@ -55,7 +56,6 @@ void Check(const string& file_to_check) {
 vector<string> ReadSubrray(FILE* file, int start, int count) {
   vector<string> ans(count, string(line_size, 0));
   fseek(file, sizeof(ll) + start * line_size, SEEK_SET);
-  //fread(&ans[0], line_size, count, file);
   for (auto& i : ans) {
     fread(&i[0], line_size, 1, file);
   }
@@ -74,16 +74,6 @@ class CacheManager {
   }
   void Write() {
     fseek(tmp, BLOCK * line_size * number_of_blocks_inside_tmp, SEEK_SET);
-    //ll arr[size_];
-
-    //cout << "test" << number_of_blocks_inside_tmp << endl;
-    //for (int i = 0; i < cache_.size(); ++i) {
-    //arr[i] = cache_[i];
-    //cout << arr[i] << " ";
-    //}
-    //cout << endl;
-
-    // fwrite(&cache_[0], line_size, size_, tmp);
     for (int i = 0; i < size_; ++i) {
       fwrite(&cache_[i][0], 1, line_size, tmp);
     }
@@ -92,14 +82,9 @@ class CacheManager {
   }
   /// The class isn't usable after this function.
   void CopyToFile(FILE* file, int start, int expected_length) {
-    // Write();
-    // assert(number_of_blocks_inside_tmp*BLOCK+cache_.size() == expected_length);
     fseek(tmp, 0, SEEK_SET);
     fseek(file, 8 + start * line_size, SEEK_SET);
     for (int i = 0; i < number_of_blocks_inside_tmp; ++i) {
-      //ll temp[BLOCK];
-      //fread(temp, line_size, BLOCK, tmp);
-      //fwrite(temp, line_size, BLOCK, file);
       vector<string> temp(BLOCK, string(line_size, 0));
       for (auto& elem : temp) {
         fread(&elem[0], 1, line_size, tmp);
@@ -108,11 +93,6 @@ class CacheManager {
         fwrite(elem.c_str(), 1, elem.size(), file);
       }
     }
-    //ll arr[cache_.size()];
-    //for (int i = 0; i < cache_.size(); ++i) {
-    //  arr[i] = cache_[i];
-    //}
-    //fwrite(&cache_[0], line_size, size_, file);
     for (int i = 0; i < size_; ++i) {
       fwrite(&cache_[i][0], 1, line_size, file);
     }
@@ -190,10 +170,8 @@ void MergeSort(FILE* file, FILE* tmp, int left_block_index, int right_block_inde
     } else if (right.HasReachedEnd()) {
       cache.AddElement(left.GetNextElement());
     } else if (left.SeeNextElement() < right.SeeNextElement()) {
-      //cout << left.SeeNextElement() << " " <<  right.SeeNextElement() << endl;
       cache.AddElement(left.GetNextElement());
     } else {
-      //cout << left.SeeNextElement() << " " <<  right.SeeNextElement() << endl;
       cache.AddElement(right.GetNextElement());
     }
   }
@@ -201,12 +179,9 @@ void MergeSort(FILE* file, FILE* tmp, int left_block_index, int right_block_inde
 }
 
 void Solve() {
-  FILE* in;
-  FILE* out;
-  FILE* tmp;
-  in = fopen("input.bin", "rb");
-  out = fopen("output.bin", "wb+");
-  tmp = fopen("tmp.bin", "wb+");
+  FILE* in = fopen("input.bin", "rb");
+  FILE* out = fopen("output.bin", "wb+");
+  FILE* tmp = fopen("tmp.bin", "wb+");
 
   int n;
   fread(&n, sizeof(ll), 1, in);
@@ -215,12 +190,10 @@ void Solve() {
   for (int i = 0; i < n; i += BLOCK) {
     int len = min(BLOCK, n - i);
     vector<string> a(len, string(line_size, 0));
-    //fread(a, line_size, len, in);
     for (auto& elem : a) {
       fread(&elem[0], 1, line_size, in);
     }
     sort(a.begin(), a.end());
-    //fwrite(a, line_size, len, out);
     for (auto& elem : a) {
       fwrite(elem.c_str(), 1, elem.size(), out);
     }
@@ -234,7 +207,7 @@ void Solve() {
 
 int32_t main() {
   FillBinFile();
-  //Check(OUTPUT);
+  Check(OUTPUT);
   Solve();
   Check(INPUT);
   Check(OUTPUT);
