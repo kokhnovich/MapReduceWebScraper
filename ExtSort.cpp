@@ -9,8 +9,8 @@
 using namespace std;
 
 const int BLOCK = 30;
-const string INPUT = "input.bin";
-const string OUTPUT = "output.bin";
+string INPUT;
+string OUTPUT;
 const string TEMP = "tmp.bin";
 const int line_size = MAX_LINK_LENGTH;
 
@@ -179,9 +179,9 @@ void MergeSort(FILE* file, FILE* tmp, int left_block_index, int right_block_inde
 }
 
 void Solve() {
-  FILE* in = fopen("input.bin", "rb");
-  FILE* out = fopen("output.bin", "wb+");
-  FILE* tmp = fopen("tmp.bin", "wb+");
+  FILE* in = fopen(INPUT.c_str(), "rb");
+  FILE* out = fopen(OUTPUT.c_str(), "wb+");
+  FILE* tmp = fopen(TEMP.c_str(), "wb+");
 
   int n;
   fread(&n, sizeof(ll), 1, in);
@@ -205,9 +205,14 @@ void Solve() {
   fclose(out);
 }
 
-int32_t main() {
-  FillBinFile();
-  Check(OUTPUT);
+int32_t main(int argc, char** argv) {
+  // FillBinFile();
+  if (argc != 3) {
+    std::cerr << "Script requires 2 args: input and output binary files" << std::endl;
+    return 1;
+  }
+  INPUT = argv[1];
+  OUTPUT = argv[2];
   Solve();
   Check(INPUT);
   Check(OUTPUT);
