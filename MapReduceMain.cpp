@@ -31,11 +31,17 @@ struct MainInfo {
 };
 
 // returns input and output values respectably
-std::pair<std::string, std::string> RunMapJob(std::vector<bp::child>& child_processes,
+std::pair<std::string, std::string> RunMapJob(const std::vector<std::string>& local_input,
+                                              std::vector<bp::child>& child_processes,
                                               const std::string& script_path,
                                               int index) {
   std::string input_file = GetFileName("input", index);
   std::string output_file = GetFileName("output", index);
+
+  std::ofstream fout(input_file);
+  for (const auto& line : local_input) {
+    fout << line << std::endl;
+  }
 
   child_processes.emplace_back(script_path,
                                bp::std_out > output_file,
@@ -56,8 +62,8 @@ void Map(const MainInfo& info) {
   std::string line;
   while (getline(in, line)) {
     local_input.push_back(line);
-    if (local_input.size() == 10) {
-      auto io_files = RunMapJob(child_processes, info.script_path, input_files.size());
+    if (local_input.size() == LENGTH_TO_DIVIDE_MAP) {
+      auto io_files = RunMapJob(local_input, child_processes, info.script_path, input_files.size());
       input_files.push_back(io_files.first);
       output_files.push_back(io_files.second);
       list_of_all_output_files.append(io_files.second).append(" ");
@@ -65,7 +71,7 @@ void Map(const MainInfo& info) {
     }
   }
   if (!local_input.empty()) {
-    auto io_files = RunMapJob(child_processes, info.script_path, input_files.size());
+    auto io_files = RunMapJob(local_input, child_processes, info.script_path, input_files.size());
     input_files.push_back(io_files.first);
     output_files.push_back(io_files.second);
     list_of_all_output_files.append(io_files.second).append(" ");
@@ -74,6 +80,7 @@ void Map(const MainInfo& info) {
   for (auto& child : child_processes) {
     child.wait();
   }
+  std::cout << child_processes.size() << std::endl;
   int code = bp::system("cat " + list_of_all_output_files, bp::std_out > info.output_path, bp::std_err > stderr);
   if (code != 0) {
     std::cerr << "error while cat files" << std::endl;
