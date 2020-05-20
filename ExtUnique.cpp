@@ -5,7 +5,8 @@ int main(int argc, char** argv) {
   std::string prev_key, now_key, now_value;
   while (getline(std::cin, now_key, '\t')) {
     getline(std::cin, now_value, '\n');
-    if (now_key != prev_key) {
+    if (now_key != prev_key ||
+        (now_key.size() == prev_key.size() + 1 && now_key.back() == '\\')) {
       std::cout << now_key << '\t' << now_value << std::endl;
       prev_key = now_key;
     }
