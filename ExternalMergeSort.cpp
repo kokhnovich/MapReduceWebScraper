@@ -1,28 +1,29 @@
 #include <bits/stdc++.h>
 
-using namespace std;
+namespace ExtMergeSort {
 
-string file = "input.txt";
-string temp = "merge_sort_temp.txt";
+std::string file = "input.txt";
+std::string temp = "merge_sort_temp.txt";
+
 int number_of_blocks;
 
 int BLOCK_SIZE = 5;
 
-string GetTempFileName(int index) {
-  return "merge_sort_temp_file_" + to_string(index);
+std::string GetTempFileName(int index) {
+  return "merge_sort_temp_file_" + std::to_string(index);
 }
 
-void WriteBlockToTempFile(const vector<string>& block, int index) {
+void WriteBlockToTempFile(const std::vector<std::string>& block, int index) {
   assert(block.size() <= BLOCK_SIZE);
-  ofstream fout(GetTempFileName(index));
+  std::ofstream fout(GetTempFileName(index));
   for (const auto& i : block) {
-    fout << i << endl;
+    fout << i << std::endl;
   }
 }
 
-vector<string> GetBlockFromStream(ifstream& fin) {
-  vector<string> ans;
-  string line;
+std::vector<std::string> GetBlockFromStream(std::ifstream& fin) {
+  std::vector<std::string> ans;
+  std::string line;
   while (ans.size() < BLOCK_SIZE && getline(fin, line)) {
     ans.push_back(line);
   }
@@ -30,8 +31,8 @@ vector<string> GetBlockFromStream(ifstream& fin) {
   return ans;
 }
 
-vector<string> GetBlock(int index) {
-  ifstream fin(GetTempFileName(index));
+std::vector<std::string> GetBlock(int index) {
+  std::ifstream fin(GetTempFileName(index));
   return GetBlockFromStream(fin);
 }
 
@@ -42,16 +43,16 @@ class WriteManager {
     fout.close();
     remove(temp.c_str());
   }
-  void Write(const string& str) {
-    fout << str << endl;
+  void Write(const std::string& str) {
+    fout << str << std::endl;
   }
   void Flush(int first_block, int block_count) {
     fout.flush();
     fout.close();
-    vector<string> block;
+    std::vector<std::string> block;
     block.reserve(BLOCK_SIZE);
-    string line;
-    ifstream fin(temp);
+    std::string line;
+    std::ifstream fin(temp);
 
     for (int index = first_block; index < first_block + block_count; ++index) {
       block = GetBlockFromStream(fin);
@@ -59,7 +60,7 @@ class WriteManager {
     }
   }
  private:
-  ofstream fout;
+  std::ofstream fout;
 };
 
 class ReadManager {
@@ -80,7 +81,7 @@ class ReadManager {
 
   std::string GetNextElement() {
     assert(!HasReachedEnd());
-    string to_return = current_string;
+    std::string to_return = current_string;
     getline(fin, current_string);
     if (IsBlockEnded()) {
       OpenNextBlock();
@@ -107,8 +108,8 @@ class ReadManager {
   }
 
   bool is_end = false;
-  ifstream fin;
-  string current_string;
+  std::ifstream fin;
+  std::string current_string;
   int first_block_index;
   int number_of_blocks;
   int counter_of_blocks = 0;
@@ -139,27 +140,27 @@ void MergeSort(int l, int r) {
 }
 
 void SplitToTempFiles() {
-  ifstream fin(file);
-  string line;
-  vector<string> block;
+  std::ifstream fin(file);
+  std::string line;
+  std::vector<std::string> block;
   while (getline(fin, line)) {
     block.push_back(line);
     if (block.size() == BLOCK_SIZE) {
       sort(block.begin(), block.end());
-      ofstream fout(GetTempFileName(number_of_blocks));
+      std::ofstream fout(GetTempFileName(number_of_blocks));
       ++number_of_blocks;
       for (const auto& i : block) {
-        fout << i << endl;
+        fout << i << std::endl;
       }
       block.clear();
     }
   }
   if (!block.empty()) {
     sort(block.begin(), block.end());
-    ofstream fout(GetTempFileName(number_of_blocks));
+    std::ofstream fout(GetTempFileName(number_of_blocks));
     ++number_of_blocks;
     for (const auto& i : block) {
-      fout << i << endl;
+      fout << i << std::endl;
     }
     block.clear();
   }
@@ -167,11 +168,11 @@ void SplitToTempFiles() {
 
 void MergeTempFiles() {
   remove(file.c_str());
-  ofstream fout(file);
+  std::ofstream fout(file);
   for (int i = 0; i < number_of_blocks; ++i) {
     auto block = GetBlock(i);
     for (const auto& j : block) {
-      fout << j << endl;
+      fout << j << std::endl;
     }
   }
 }
@@ -183,10 +184,12 @@ void ClearWorkDir() {
   }
 }
 
-int main() {
+void Run(const std::string& file_to_sort) {
+  file = file_to_sort;
   SplitToTempFiles();
   MergeSort(0, number_of_blocks - 1);
   MergeTempFiles();
   ClearWorkDir();
-  return 0;
+}
+
 }
