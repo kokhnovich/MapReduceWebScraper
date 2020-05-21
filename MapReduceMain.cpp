@@ -159,7 +159,7 @@ void Reduce(const MainInfo& info) {
       std::string word;
       int count;
       while (in >> word >> count) {
-        stream << word << ' ' << count << std::endl;
+        stream << word << '\t' << count << std::endl;
       }
     }
   }
