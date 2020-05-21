@@ -2,12 +2,9 @@
 #include <boost/process.hpp>
 
 #include "constants.h"
+#include "ExternalMergeSort.cpp"
 
 namespace bp = boost::process;
-
-int RemoveFile(const std::string& file_name) {
-  return remove(file_name.c_str());
-}
 
 void RemoveFiles(const std::vector<std::string>& file_names) {
   for (const auto& name: file_names) {
@@ -56,7 +53,6 @@ void Map(const MainInfo& info) {
   std::vector<bp::child> child_processes;
   std::string list_of_all_output_files;
 
-  std::cout << info.input_path << std::endl;
   std::ifstream in(info.input_path);
   std::vector<std::string> local_input;
   local_input.reserve(LENGTH_TO_DIVIDE_MAP);
@@ -82,9 +78,9 @@ void Map(const MainInfo& info) {
     child.wait();
   }
   assert(!child_processes.empty());
-  std::cout << child_processes.size() << std::endl;
-  std::cout << list_of_all_output_files << std::endl;
-  int code = bp::system("cat " + list_of_all_output_files, bp::std_out > info.output_path, bp::std_err > stderr);
+  int code = bp::system("cat " + list_of_all_output_files,
+                        bp::std_out > info.output_path,
+                        bp::std_err > stderr);
   if (code != 0) {
     std::cerr << "error while cat files" << std::endl;
     exit(code);
@@ -95,18 +91,79 @@ void Map(const MainInfo& info) {
 }
 
 void Reduce(const MainInfo& info) {
-  if (bp::system("bash SortTxtFile.sh " + info.input_path) != 0) {
-    std::cerr << "error while sort" << std::endl;
-    return;
+  // @TODO reduce doesn't change the input data
+  ExtMergeSort::Run(info.input_path);
+
+  std::vector<std::string> input_files;
+  std::vector<std::string> output_files;
+  std::vector<bp::child> child_processes;
+  std::vector<std::string> block;
+  std::string line, prev_line;
+  std::ifstream fin(info.input_path);
+  int temp_file_count = 0;
+  bool is_first = true;
+  while (getline(fin, line, '\t')) {
+    std::string value;
+    getline(fin, value);
+    if (line == prev_line || is_first) {
+      if (is_first) {
+        is_first = false;
+        prev_line = line;
+      }
+      block.push_back(line.append("\t").append(value));
+    } else {
+      prev_line = line;
+      auto input_file = GetFileName("input", temp_file_count);
+      auto output_file = GetFileName("output", temp_file_count);
+      ++temp_file_count;
+      std::ofstream fout(input_file);
+      for (auto& i : block) {
+        fout << i << std::endl;
+      }
+      input_files.push_back(input_file);
+      output_files.push_back(output_file);
+      child_processes.emplace_back(info.script_path,
+                                   bp::std_out > output_file,
+                                   bp::std_err > stderr,
+                                   bp::std_in < input_file);
+      block.clear();
+      block.push_back(line.append("\t").append(value));
+    }
   }
-  int code = bp::system(info.script_path,
-                        bp::std_out > info.output_path,
-                        bp::std_err > stderr,
-                        bp::std_in < info.input_path);
-  if (code != 0) {
-    std::cerr << "error while reduce" << std::endl;
-    exit(code);
+  if (!block.empty()) {
+    auto input_file = GetFileName("input", temp_file_count);
+    auto output_file = GetFileName("output", temp_file_count);
+    std::ofstream fout(input_file);
+    for (auto& i : block) {
+      fout << i << std::endl;
+    }
+    input_files.push_back(input_file);
+    output_files.push_back(output_file);
+    child_processes.emplace_back(info.script_path,
+                                 bp::std_out > output_file,
+                                 bp::std_err > stderr,
+                                 bp::std_in < input_file);
+    block.clear();
   }
+
+  for (auto& child : child_processes) {
+    child.wait();
+  }
+
+  RemoveFiles(input_files);
+
+  { // output data
+    std::ofstream stream(info.output_path);
+    for (auto& name : output_files) {
+      std::ifstream in(name);
+      std::string word;
+      int count;
+      while (in >> word >> count) {
+        stream << word << ' ' << count << std::endl;
+      }
+    }
+  }
+  RemoveFiles(output_files);
 };
 
 int main(int argc, char* argv[]) {
