@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 #include <boost/process.hpp>
 
-#include "constants.h"
+#include "Constants.h"
 #include "ExternalMergeSort.cpp"
 
 namespace bp = boost::process;
@@ -91,15 +91,16 @@ void Map(const MainInfo& info) {
 }
 
 void Reduce(const MainInfo& info) {
-  // @TODO reduce doesn't change the input data
-  ExtMergeSort::Run(info.input_path);
+  std::string temp_input = "reduce_temp_input.txt";
+  std::filesystem::copy_file(info.input_path, temp_input);
+  ExtMergeSort::Run(temp_input);
 
   std::vector<std::string> input_files;
   std::vector<std::string> output_files;
   std::vector<bp::child> child_processes;
   std::vector<std::string> block;
   std::string line, prev_line;
-  std::ifstream fin(info.input_path);
+  std::ifstream fin(temp_input);
   int temp_file_count = 0;
   bool is_first = true;
   while (getline(fin, line, '\t')) {
@@ -163,6 +164,7 @@ void Reduce(const MainInfo& info) {
       }
     }
   }
+  remove(temp_input.c_str());
   RemoveFiles(output_files);
 };
 
