@@ -39,18 +39,17 @@ for line in data:
                     continue
                 visited.add(link)
                 ref = link['href']
+                if ref[:2] == '//' and is_correct('https:'+ref):
+                    print('https:' + ref + '\t1')
+                    continue
                 if is_correct(ref):
                     print(ref + '\t1')
                 elif is_correct(address+ref):
                     print(address + ref + '\t1')
-                elif is_correct('https:'+ref):
-                    print('https:' + ref + '\t1')
-                else:
-                    pass
-                    # print('not a link ' + ref, file=sys.stderr)
+                
             print(address + '\t0')
         except:
             print(sys.exc_info()[0], file=sys.stderr)
-            print("can't get '" + line + "'", file=sys.stderr)
+            print("can't get '" + address + "'", file=sys.stderr)
     except:
         print('can\'t split ' + line, file=sys.stderr)
