@@ -38,10 +38,16 @@ for line in data:
                 if link in visited:
                     continue
                 visited.add(link)
-                # @TODO add handlers for links started with '//' and '#'
                 ref = link['href']
                 if is_correct(ref):
                     print(ref + '\t1')
+                elif is_correct(address+ref):
+                    print(address + ref + '\t1')
+                elif is_correct('https:'+ref):
+                    print('https:' + ref + '\t1')
+                else:
+                    pass
+                    # print('not a link ' + ref, file=sys.stderr)
             print(address + '\t0')
         except:
             print(sys.exc_info()[0], file=sys.stderr)
