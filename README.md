@@ -8,11 +8,13 @@
 ```commandline
 bash BuildScripts.sh
 ```
+(а можно просто переместить из папки build)
 
 Для запуска скрапера достаточно выполнить в командной строке
 ```commandline
 bash WebScraperMainScript input.txt output.txt depth
 ```
+
 где depth - глубина захода,
 input.txt, output.txt - входной и выходной файлы.
 
